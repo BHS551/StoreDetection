@@ -43,8 +43,6 @@ export const handler = async (event) => {
     return { statusCode: 200, headers, body: "" };
   }
 
-  console.log("EVENT 👉", JSON.stringify(event, null, 2));
-
   try {
     const token = getBearerToken(event);
     if (!token) {
@@ -55,24 +53,23 @@ export const handler = async (event) => {
       };
     }
 
+    // No se loguea el evento ni el body: el evento incluye el header
+    // Authorization (token Firebase) y el body datos del usuario.
     const decodedToken = await admin.auth().verifyIdToken(token);
-    console.log("Authenticated user:", decodedToken.uid);
 
     const bodyText = event.body || "";
-    console.log("BODY TEXT 👉", bodyText);
 
     let body = {};
     if (bodyText) {
       try {
         body = JSON.parse(bodyText);
       } catch (e) {
-        console.log("JSON parse error:", e.message);
+        console.warn("JSON parse error:", e.message);
       }
     }
 
     // Usar owner_uid del body si existe, sino usar el uid del token
     const ownerUid = body.owner_uid || decodedToken.uid;
-    console.log("Owner UID:", ownerUid);
 
     const now = new Date().toISOString();
     const id = `${now}-${Math.random().toString(36).slice(2, 8)}`;
@@ -98,11 +95,9 @@ export const handler = async (event) => {
       body: JSON.stringify({ ok: true, id }),
     };
   } catch (err) {
-    const isAuthError =
-      err?.code?.startsWith?.("auth/") ||
-      err?.message?.toLowerCase?.().includes("token");
+    const isAuthError = err?.code?.startsWith?.("auth/") === true;
 
-    console.error("Error:", err);
+    console.error("Error:", err?.message ?? err);
     return {
       statusCode: isAuthError ? 401 : 500,
       headers,

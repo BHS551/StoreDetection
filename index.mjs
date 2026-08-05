@@ -118,12 +118,18 @@ export const handler = async (event) => {
     const now = new Date().toISOString();
     const id = `${now}-${Math.random().toString(36).slice(2, 8)}`;
 
+    // TTL: las detecciones se autoeliminan a los 30 días (los frames en S3
+    // caducan a los 7). Solo los eventos llevan expireAt; los dispositivos no,
+    // así que nunca expiran aunque compartan tabla.
+    const expireAt = Math.floor(Date.now() / 1000) + 30 * 24 * 3600;
+
     const item = {
       type: { S: "event" },
       id: { S: id },
       created_at: { S: now },
       raw: { S: bodyText || JSON.stringify(body) || "{}" },
       owner_uid: { S: ownerUid },
+      expireAt: { N: String(expireAt) },
     };
 
     await client.send(

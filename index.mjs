@@ -112,8 +112,10 @@ export const handler = async (event) => {
       }
     }
 
-    // Usar owner_uid del body si existe, sino usar el uid del token
-    const ownerUid = body.owner_uid || decodedToken.uid;
+    // owner_uid siempre viene del token verificado, nunca del body: de lo
+    // contrario un caller autenticado podría atribuir la detección a
+    // cualquier otro tenant.
+    const ownerUid = decodedToken.uid;
 
     const now = new Date().toISOString();
     const id = `${now}-${Math.random().toString(36).slice(2, 8)}`;
